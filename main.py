@@ -8,7 +8,9 @@ COLOR_WHITE = 1
 COLOR_NONE = 0
 random.seed(1)
 
-
+ 
+ 
+ 
 class AI(object):
     # chessboard_size, color, time_out passed from agent
     def __init__(self, chessboard_size, color, time_out):
@@ -57,7 +59,7 @@ class AI(object):
 
 
 def valid_position(chessboard, x, y, color):
-    # 竖直方向
+    # ||||竖直方向
     count = 0
 
     t = 0
