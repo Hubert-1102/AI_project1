@@ -1,16 +1,17 @@
 import numpy as np
 import random
 import time
+import numba as nb
 from queue import PriorityQueue
 
 COLOR_BLACK = -1
 COLOR_WHITE = 1
 COLOR_NONE = 0
 random.seed(1)
+access_number: int = 5000
+access_time: int = 5
 
- 
- 
- 
+
 class AI(object):
     # chessboard_size, color, time_out passed from agent
     def __init__(self, chessboard_size, color, time_out):
@@ -20,6 +21,16 @@ class AI(object):
         self.candidate_list = []
 
     def go(self, chessboard):
+        rootNode: Node = Node(parent=None, chessboard=chessboard, color=self.color, x=-1, y=-1)
+        for i in range(access_number):
+            print(i)
+            node: Node = tree_policy(rootNode)
+            reward = default_policy(node.chessboard,node.color)
+            backup(node, reward)
+        best_node = best_child(rootNode)
+        return best_node.x, best_node.y
+
+    def go_greedy(self, chessboard):
         self.candidate_list.clear()
         # write algorithm
         idx = np.where(chessboard == COLOR_NONE)
@@ -57,9 +68,9 @@ class AI(object):
         self.candidate_list.append(position)
         return self.candidate_list
 
-
+@nb.jit(nopython=True)
 def valid_position(chessboard, x, y, color):
-    # ||||竖直方向
+    # 竖直方向
     count = 0
 
     t = 0
@@ -130,21 +141,6 @@ class Node(object):
         self.x = x
         self.y = y
 
-    def default_policy(self):
-        chessboard = self.chessboard
-        color = self.color
-        while True:
-            moves = next_moves(chessboard, color)
-            if len(moves) == 0 and len(next_moves(chessboard, -color)) == 0:
-                break
-            if len(moves) == 0:
-                color = -color
-                moves = next_moves(chessboard, color)
-            rand_index = random.randint(0, len(moves) - 1)
-            x, y = moves[rand_index]
-            chessboard = update_chessboard(x, y, chessboard, color)
-            color = -color
-        return who_win(chessboard, self.color)
 
     def expand(self, x, y):
         chessboard2 = self.chessboard.copy()
@@ -154,12 +150,30 @@ class Node(object):
         return result
 
 
+@nb.jit(nopython=True)
+def default_policy(chessboard,color1):
+    chessboard = chessboard.copy()
+    color = color1
+    while True:
+        moves = next_moves(chessboard, color)
+        if len(moves) == 0 and len(next_moves(chessboard, -color)) == 0:
+            break
+        if len(moves) == 0:
+            color = -color
+            moves = next_moves(chessboard, color)
+        rand_index = random.randint(0, len(moves) - 1)
+        x, y = moves[rand_index]
+        chessboard = update_chessboard(x, y, chessboard, color)
+        color = -color
+    return who_win(chessboard, color1)
+
+
 def is_terminal(chessboard):
     list1 = next_moves(chessboard, 1)
     list2 = next_moves(chessboard, -1)
     return len(list1) + len(list2) == 0
 
-
+@nb.jit(nopython=True)
 def next_moves(chessboard, color):
     idx = np.where(chessboard == COLOR_NONE)
     idx_list = list(zip(idx[0], idx[1]))
@@ -176,7 +190,6 @@ def tree_policy(node: Node):
         if is_expanded(node):
             node = best_child(node)
         else:
-            pass
             '''
             make sure to expand a new subNode
             '''
@@ -189,9 +202,11 @@ def tree_policy(node: Node):
 
 
 def backup(node: Node, reward):
+    turn = 1
     while node is not None:
         node.access += 1
-        node.reward += reward
+        node.reward += reward * turn
+        turn = turn * -1
         node = node.parent
 
 
@@ -201,17 +216,28 @@ def is_expanded(node: Node):
     return len(moves) == len(children)
 
 
+def best_move(node: Node):
+    best_node = None
+    max_access = -1
+    for sub_node in node.children.values():
+        if sub_node.access > max_access:
+            max_access = sub_node.access
+            best_node = sub_node
+    return best_node
+
+
 def best_child(node: Node):
     best_node = None
     best_score = -1e9
     for sub_node in node.children.values():
         left = sub_node.reward / sub_node.access
-        right = 1/np.sqrt(2) * np.log(node.access) / sub_node.access
-        score = left+right
+        right = 1 / np.sqrt(2) * np.sqrt(np.log(node.access) / sub_node.access)
+        score = left + right
         if score > best_score:
             best_node = sub_node
             best_score = score
     return best_node
+@nb.jit(nopython=True)
 
 def who_win(chessboard, color):
     idx_1 = np.where(chessboard == COLOR_WHITE)
@@ -228,62 +254,62 @@ def who_win(chessboard, color):
         # 平局
         return 0
 
-
+@nb.jit(nopython=True)
 def update_chessboard(x, y, chessboard, color):
-    # 水平方向
+    # |||方向
     t = 1
     while x + t <= 7 and chessboard[x + t, y] == -color:
         t += 1
     if x + t <= 7 and chessboard[x + t, y] == color:
-        chessboard[x:x + t, y] = color
+        chessboard[x:x + t + 1, y] = color
 
     t = 1
     while x - t >= 0 and chessboard[x - t, y] == -color:
         t += 1
     if x - t >= 0 and chessboard[x - t, y] == color:
-        chessboard[x - t:x, y] = color
+        chessboard[x - t:x + 1, y] = color
 
-    # 竖直方向
+    # ----------方向
     t = 1
     while y + t <= 7 and chessboard[x, y + t] == -color:
         t += 1
     if y + t <= 7 and chessboard[x, y + t] == color:
-        chessboard[x, y:y + t] = color
+        chessboard[x, y:y + t + 1] = color
 
     t = 1
     while y - t >= 0 and chessboard[x, y - t] == -color:
         t += 1
     if y - t >= 0 and chessboard[x, y - t] == color:
-        chessboard[x, y - t:y] = color
+        chessboard[x, y - t:y + 1] = color
 
     # \\\\方向
     t = 1
     while y + t <= 7 and x + t <= 7 and chessboard[x + t, y + t] == -color:
         t += 1
     if y + t <= 7 and x + t <= 7 and chessboard[x + t, y + t] == color:
-        for i in range(t):
-            chessboard[x + i + 1, y + i + 1] = color
+        for i in range(t + 1):
+            chessboard[x + i, y + i] = color
 
     t = 1
     while y - t >= 0 and x - t >= 0 and chessboard[x - t, y - t] == -color:
         t += 1
     if y - t >= 0 and x - t >= 0 and chessboard[x - t, y - t] == color:
-        for i in range(t):
-            chessboard[x - i - 1, y - i - 1] = color
+        for i in range(t + 1):
+            chessboard[x - i, y - i] = color
 
     # ///方向
     t = 1
     while y + t <= 7 and x - t >= 0 and chessboard[x - t, y + t] == -color:
         t += 1
     if y + t <= 7 and x - t >= 0 and chessboard[x - t, y + t] == color:
-        for i in range(t):
-            chessboard[x - i - 1, y + i + 1] = color
+        for i in range(t + 1):
+            chessboard[x - i, y + i] = color
 
     t = 1
     while y - t >= 0 and x + t <= 7 and chessboard[x + t, y - t] == -color:
         t += 1
     if y - t >= 0 and x + t <= 7 and chessboard[x + t, y - t] == color:
-        for i in range(t):
-            chessboard[x + i + 1, y - i - 1] = color
+        for i in range(t + 1):
+            chessboard[x + i, y - i] = color
 
     return chessboard
