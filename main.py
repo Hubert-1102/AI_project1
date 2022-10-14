@@ -16,6 +16,7 @@ best_p = (-1, -1)
 nopython = False
 rate = -1
 
+
 class AI(object):
     # chessboard_size, color, time_out passed from agent
     def __init__(self, chessboard_size, color, time_out):
@@ -28,7 +29,9 @@ class AI(object):
         global best_p, max_access
         self.candidate_list.clear()
         begin = time.time()
-        self.candidate_list += next_moves(chessboard, self.color, False)
+        moves = next_moves(chessboard, self.color, False)
+        for x, y, c in moves:
+            self.candidate_list.append((x, y))
         # self.candidate_list.append(self.candidate_list[0])
         rootNode: Node = Node(parent=None, chessboard=chessboard, color=self.color, x=-1, y=-1)
         root = Node(parent=None, chessboard=chessboard, color=self.color, x=-1, y=-1)
@@ -181,9 +184,9 @@ def default_policy(chessboard, color1):
         if len(moves) == 0:
             color = -color
             moves = next_moves(chessboard, color, True)
-        rand_index = random.randint(0, len(moves) - 1)
-        x, y = moves[rand_index]
-        # x, y = greedy(moves)
+        # rand_index = random.randint(0, len(moves) - 1)
+        # x, y, c = moves[rand_index]
+        x, y = greedy(moves)
         chessboard = update_chessboard(x, y, chessboard, color)
         color = -color
     return who_win(chessboard, color1)
@@ -192,11 +195,11 @@ def default_policy(chessboard, color1):
 @nb.jit(nopython=nopython)
 def greedy(moves: []):
     result = (-1, -1)
-    max_grade = -100
-    for x, y in moves:
+    min_grade = 1000
+    for x, y, c in moves:
         x_distance = abs(x - 3.5)
         y_distance = abs(y - 3.5)
-        para = x_distance + y_distance
+        para = c + x_distance + y_distance
         if x_distance == 3.5 and y_distance == 3.5:
             para = para * 20
         else:
@@ -210,8 +213,8 @@ def greedy(moves: []):
                 para = para - 2
             if x_distance == 2.5 and y_distance == 2.5:
                 para = para / 1.5
-        if para > max_grade:
-            max_grade = para
+        if para < min_grade:
+            min_grade = para
             result = (x, y)
     return result
 
@@ -224,7 +227,7 @@ def next_moves(chessboard, color, flag):
     for x, y in idx_list:
         c, p1, p2 = valid_position(chessboard, x, y, color)
         if c > 0:
-            result.append((x, y))
+            result.append((x, y, c))
     return result
 
 
@@ -323,7 +326,7 @@ def tree_policy(node: Node, copy):
             '''
             moves = next_moves(node.chessboard, node.color, False)
             children = node.children
-            for x, y in moves:
+            for x, y, c in moves:
                 if (x, y) not in children.keys():
                     return node.expand(x, y)
     return node
@@ -331,11 +334,11 @@ def tree_policy(node: Node, copy):
 
 def backup(node: Node, reward, rootNode: Node):
     turn = 1
-    global max_access, best_p,rate
+    global max_access, best_p, rate
     while node is not None:
         node.access += 1
         if node.parent == rootNode and node.access > max_access and node.x != -2:
-            rate = node.reward/node.access
+            rate = node.reward / node.access
             max_access = node.access
             best_p = (node.x, node.y)
         if reward * turn == 1:
