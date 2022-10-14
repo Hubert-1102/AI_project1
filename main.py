@@ -13,6 +13,7 @@ access_time: int = 5
 heap = []
 max_access = 0
 best_p = (-1, -1)
+nopython = False
 
 
 class AI(object):
@@ -27,21 +28,22 @@ class AI(object):
         self.candidate_list.clear()
         begin = time.time()
         self.candidate_list += next_moves(chessboard, self.color, False)
+        # self.candidate_list.append(self.candidate_list[0])
         rootNode: Node = Node(parent=None, chessboard=chessboard, color=self.color, x=-1, y=-1)
         root = Node(parent=None, chessboard=chessboard, color=self.color, x=-1, y=-1)
         for i in range(access_number):
             # print(i)
-            node: Node = tree_policy(rootNode,root)
+            node: Node = tree_policy(rootNode, root)
             reward = default_policy(node.chessboard, node.color)
             backup(node, reward, rootNode)
-            if i % 40 == 0:
+            if i % 10 == 0 and best_p != (-1, -1):
                 self.candidate_list.append(best_p)
-            if time.time()-begin>self.time_out-0.2:
+            if time.time() - begin > self.time_out - 0.1:
                 return self.candidate_list
         # best_node = best_child(rootNode)
         return self.candidate_list
 
-    def go_greedy(self, chessboard):
+    def go1(self, chessboard):
         self.candidate_list.clear()
         # write algorithm
         idx = np.where(chessboard == COLOR_NONE)
@@ -80,7 +82,7 @@ class AI(object):
         return self.candidate_list
 
 
-@nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def valid_position(chessboard, x, y, color):
     # 竖直方向
     count = 0
@@ -161,7 +163,7 @@ class Node(object):
         return result
 
 
-@nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def default_policy(chessboard, color1):
     random.seed(10)
     chessboard = chessboard.copy()
@@ -174,14 +176,14 @@ def default_policy(chessboard, color1):
             color = -color
             moves = next_moves(chessboard, color, True)
         rand_index = random.randint(0, len(moves) - 1)
-        x, y= moves[rand_index]
+        x, y = moves[rand_index]
         # x,y = greedy(moves)
         chessboard = update_chessboard(x, y, chessboard, color)
         color = -color
     return who_win(chessboard, color1)
 
 
-# @nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def greedy(moves: []):
     result = (-1, -1)
     max_grade = -100
@@ -207,13 +209,8 @@ def greedy(moves: []):
             result = (x, y)
     return result
 
-def is_terminal(chessboard):
-    list1 = next_moves(chessboard, 1, False)
-    list2 = next_moves(chessboard, -1, False)
-    return len(list1) + len(list2) == 0
 
-
-@nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def next_moves(chessboard, color, flag):
     idx = np.where(chessboard == COLOR_NONE)
     idx_list = list(zip(idx[0], idx[1]))
@@ -221,76 +218,11 @@ def next_moves(chessboard, color, flag):
     for x, y in idx_list:
         c, p1, p2 = valid_position(chessboard, x, y, color)
         if c > 0:
-                result.append((x, y))
+            result.append((x, y))
     return result
 
 
-def tree_policy(node: Node,copy):
-
-    while not is_terminal(node.chessboard):
-        # skip case
-        if is_expanded(node):
-            node = best_child(node)
-        else:
-            '''
-            make sure to expand a new subNode
-            '''
-            moves = next_moves(node.chessboard, node.color, False)
-            children = node.children
-            for x, y in moves:
-                if (x, y) not in children.keys():
-                    return node.expand(x, y)
-    return node
-
-
-def backup(node: Node, reward, rootNode: Node):
-    turn = 1
-    global max_access, best_p
-    while node is not None:
-        node.access += 1
-        if node.parent == rootNode and node.access > max_access:
-            max_access = node.access
-            best_p = (node.x, node.y)
-        node.reward += reward * turn
-        turn = turn * -1
-        node = node.parent
-
-
-def is_expanded(node: Node):
-    moves = next_moves(node.chessboard, node.color, False)
-    children = node.children
-
-    return len(moves) == len(children)
-
-
-# @nb.jit(nopython=True)
-def best_move(node):
-    best_node = None
-    max_access = -1
-    for sub_node in node.children.values():
-        if sub_node.access > max_access:
-            max_access = sub_node.access
-            best_node = sub_node
-    return best_node
-
-
-def best_child(node: Node):
-    best_node = None
-    best_score = -1e9
-    for sub_node in node.children.values():
-        left = sub_node.reward / sub_node.access
-        right = 1 / np.sqrt(2) * np.sqrt(np.log(node.access) / sub_node.access)
-        score = left + right
-        if score > best_score:
-            best_node = sub_node
-            best_score = score
-    if best_node is None :
-        cs = node.chessboard.copy()
-        best_node = Node(parent=node,chessboard=cs,color=-node.color,x=-2,y=-2)
-    return best_node
-
-
-@nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def who_win(chessboard: np.ndarray, color):
     idx_1 = np.where(chessboard == COLOR_WHITE)
     c_white = len(idx_1[0])
@@ -307,7 +239,7 @@ def who_win(chessboard: np.ndarray, color):
         return 0
 
 
-@nb.jit(nopython=True)
+# @nb.jit(nopython=nopython)
 def update_chessboard(x, y, chessboard, color):
     # |||方向
     t = 1
@@ -366,3 +298,73 @@ def update_chessboard(x, y, chessboard, color):
             chessboard[x + i, y - i] = color
 
     return chessboard
+
+
+def is_terminal(chessboard):
+    list1 = next_moves(chessboard, 1, False)
+    list2 = next_moves(chessboard, -1, False)
+    return len(list1) + len(list2) == 0
+
+
+def tree_policy(node: Node, copy):
+    while not is_terminal(node.chessboard):
+        # skip case
+        if is_expanded(node):
+            node = best_child(node)
+        else:
+            '''
+            make sure to expand a new subNode
+            '''
+            moves = next_moves(node.chessboard, node.color, False)
+            children = node.children
+            for x, y in moves:
+                if (x, y) not in children.keys():
+                    return node.expand(x, y)
+    return node
+
+
+def backup(node: Node, reward, rootNode: Node):
+    turn = 1
+    global max_access, best_p
+    while node is not None:
+        node.access += 1
+        if node.parent == rootNode and node.access > max_access and node.x != -2:
+            max_access = node.access
+            best_p = (node.x, node.y)
+        node.reward += reward * turn
+        turn = turn * -1
+        node = node.parent
+
+
+def is_expanded(node: Node):
+    moves = next_moves(node.chessboard, node.color, False)
+    children = node.children
+
+    return len(moves) == len(children)
+
+
+# @nb.jit(nopython=nopython)
+def best_move(node):
+    best_node = None
+    max_access = -1
+    for sub_node in node.children.values():
+        if sub_node.access > max_access:
+            max_access = sub_node.access
+            best_node = sub_node
+    return best_node
+
+
+def best_child(node: Node):
+    best_node = None
+    best_score = -1e9
+    for sub_node in node.children.values():
+        left = sub_node.reward / sub_node.access
+        right = 1 / np.sqrt(2) * np.sqrt(np.log(node.access) / sub_node.access)
+        score = left + right
+        if score > best_score:
+            best_node = sub_node
+            best_score = score
+    if best_node is None:
+        cs = node.chessboard.copy()
+        best_node = Node(parent=node, chessboard=cs, color=-node.color, x=-2, y=-2)
+    return best_node
