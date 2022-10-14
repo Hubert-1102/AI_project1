@@ -7,13 +7,12 @@ from queue import PriorityQueue
 COLOR_BLACK = -1
 COLOR_WHITE = 1
 COLOR_NONE = 0
-random.seed(1)
-access_number: int = 20000
+seed=40
+access_number: int = 10000
 access_time: int = 5
-heap = []
 max_access = 0
 best_p = (-1, -1)
-nopython = False
+nopython = True
 rate = -1
 
 class AI(object):
@@ -38,7 +37,7 @@ class AI(object):
             backup(node, reward, rootNode)
             if i % 10 == 0 and best_p != (-1, -1):
                 self.candidate_list.append(best_p)
-            if time.time() - begin > self.time_out - 0.1:
+            if time.time() - begin > self.time_out - 0.02:
                 best_p = (-1, -1)
                 max_access = 0
                 print(str(rate))
@@ -171,7 +170,7 @@ class Node(object):
 
 @nb.jit(nopython=nopython)
 def default_policy(chessboard, color1):
-    random.seed(10)
+    random.seed(seed)
     chessboard = chessboard.copy()
     color = color1
     while True:
