@@ -1,5 +1,9 @@
 import numpy as np
+<<<<<<< HEAD
 import main,compare
+=======
+import main, fight
+>>>>>>> 03bb16eb37630d3a15f5b3ba88d79a9189a75de2
 import heapq
 
 a = np.array(
@@ -10,9 +14,13 @@ a = np.array(
 import time
 
 begin = time.time()
-my_color=1
+my_color = 1
 ai1 = main.AI(chessboard_size=8, color=my_color, time_out=5)
+<<<<<<< HEAD
 ai2 = compare.AI(chessboard_size=8, color=-my_color, time_out=5)
+=======
+ai2 = fight.AI(chessboard_size=8, color=-my_color, time_out=5)
+>>>>>>> 03bb16eb37630d3a15f5b3ba88d79a9189a75de2
 print(a)
 while True:
     begin1 = time.time()
@@ -28,6 +36,10 @@ while True:
         a = main.update_chessboard(x, y, a, ai2.color)
     if len(list1) == 0 and len(list2) == 0:
         print(len(np.where(a == my_color)[0]))
+        if len(np.where(a == my_color)[0]) > 32:
+            print('You lose!')
+        if len(np.where(a == my_color)[0]) < 32:
+            print('You win!')
         break
     end2 = time.time()
     print(a)
