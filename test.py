@@ -2,23 +2,33 @@ import numpy as np
 import main
 import heapq
 
-a = np.array([
-    [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, -1, 1, 0, 0, 0], [0, 0, 0, -1, 1, 0, 0, 0],
-    [0, 0, 0, -1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0]])
+a = np.array(
+    [[0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
+     [0, 0, 0, 1, -1, 0, 0, 0], [0, 0, 0, -1, 1, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0],
+     [0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0]])
 
-# a= np.ones((8,8))
-# a[7,0] = 0
-# a[7,7]=-1
 import time
 
 begin = time.time()
-ai = main.AI(chessboard_size=8, color=-1, time_out=5)
+my_color=1
+ai1 = main.AI(chessboard_size=8, color=my_color, time_out=5)
+ai2 = main.AI(chessboard_size=8, color=-my_color, time_out=5)
 print(a)
-list0 = ai.go(a)
-print(list0)
-
-print(time.time() - begin)
-list1 = ai.go1(a)
-print(list1)
-# print(a[3])
+while True:
+    begin1 = time.time()
+    list1 = ai1.go(a)
+    if len(list1) != 0:
+        x, y = list1[-1]
+        print(list1)
+        a = main.update_chessboard(x, y, a, ai1.color)
+    end = time.time()
+    list2 = ai2.go1(a)
+    if len(list2) != 0:
+        x, y = list2[-1]
+        a = main.update_chessboard(x, y, a, ai2.color)
+    if len(list1) == 0 and len(list2) == 0:
+        print(len(np.where(a == my_color)[0]))
+        break
+    print(a)
+    print('time: ' + str(end - begin1))
+    print('--------------------------------------')
