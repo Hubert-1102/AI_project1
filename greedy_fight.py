@@ -8,7 +8,7 @@ COLOR_BLACK = -1
 COLOR_WHITE = 1
 COLOR_NONE = 0
 random.seed(1)
-access_number: int = 11000
+access_number: int = 20000
 access_time: int = 5
 heap = []
 max_access = 0
@@ -16,6 +16,7 @@ best_p = (-1, -1)
 nopython = False
 rate = -1
 round = 0
+name = 'fight: '
 
 
 class AI(object):
@@ -47,12 +48,12 @@ class AI(object):
             if time.time() - begin > self.time_out - 0.1:
                 best_p = (-1, -1)
                 max_access = 0
-                print(str(rate))
+                print(name + str(rate))
                 return self.candidate_list
         # best_node = best_child(rootNode)
         best_p = (-1, -1)
         max_access = 0
-        print(rate)
+        print(name + str(rate))
         return self.candidate_list
 
     def go1(self, chessboard):
@@ -225,6 +226,7 @@ def greedy(moves: []):
     return result
 
 
+
 @nb.jit(nopython=nopython)
 def next_moves(chessboard, color, flag):
     idx = np.where(chessboard == COLOR_NONE)
@@ -374,10 +376,8 @@ def best_move(node):
 def best_child(node: Node):
     best_node = None
     best_score = -1e9
-    factor = 0
-    if round < 15:
-        factor = 0.2
-    else :
+    factor = 0.5 - round / 32 / 2
+    if round >= 17:
         factor = 0
     for sub_node in node.children.values():
         left = sub_node.reward / sub_node.access

@@ -8,14 +8,14 @@ COLOR_BLACK = -1
 COLOR_WHITE = 1
 COLOR_NONE = 0
 random.seed(1)
-access_number: int = 11000
+access_number: int = 20000
 access_time: int = 5
 heap = []
 max_access = 0
 best_p = (-1, -1)
 nopython = False
 rate = -1
-
+name = 'main: '
 
 class AI(object):
     # chessboard_size, color, time_out passed from agent
@@ -44,12 +44,12 @@ class AI(object):
             if time.time() - begin > self.time_out - 0.1:
                 best_p = (-1, -1)
                 max_access = 0
-                print(str(rate))
+                print(name+str(rate))
                 return self.candidate_list
         # best_node = best_child(rootNode)
         best_p = (-1, -1)
         max_access = 0
-        print(rate)
+        print(name + str(rate))
         return self.candidate_list
 
     def go1(self, chessboard):
