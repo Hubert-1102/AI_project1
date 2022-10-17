@@ -29,6 +29,7 @@ class AI(object):
 
     def go(self, chessboard):
         global best_p, max_access, round
+        best_p = (-1, -1)
         round += 1
         print('round: ' + str(round))
         self.candidate_list.clear()

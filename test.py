@@ -10,9 +10,9 @@ a = np.array(
 import time
 
 begin = time.time()
-my_color = 1
-ai2 =main.AI(chessboard_size=8, color=my_color, time_out=5)
-ai1 = greedy_fight.AI(chessboard_size=8, color=-my_color, time_out=5)
+my_color = -1
+ai1 =main.AI(chessboard_size=8, color=my_color, time_out=5)
+ai2 = greedy_fight.AI(chessboard_size=8, color=-my_color, time_out=5)
 print(a)
 while True:
     begin1 = time.time()
