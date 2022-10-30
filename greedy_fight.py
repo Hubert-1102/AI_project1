@@ -16,7 +16,7 @@ best_p = (-1, -1)
 nopython = False
 rate = -1
 round = 0
-name = 'fight: '
+name = 'main: '
 
 
 class AI(object):
@@ -30,7 +30,7 @@ class AI(object):
     def go(self, chessboard):
         global best_p, max_access, round
         best_p = (-1, -1)
-        round += 1
+        round = round%32+1
         print('round: ' + str(round))
         self.candidate_list.clear()
         begin = time.time()
@@ -49,6 +49,7 @@ class AI(object):
             if time.time() - begin > self.time_out - 0.1:
                 best_p = (-1, -1)
                 max_access = 0
+                print('mainCount:' + str(i))
                 print(name + str(rate))
                 return self.candidate_list
         # best_node = best_child(rootNode)
@@ -225,7 +226,6 @@ def greedy(moves: []):
             min_grade = para
             result = (x, y)
     return result
-
 
 
 @nb.jit(nopython=nopython)
